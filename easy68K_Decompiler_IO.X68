@@ -31,7 +31,7 @@ LOOP    MOVE.B  #4,D0       ;Reads in Input
 *-----------------------------------------------------------
 * Subroutine 	: RANGE
 * Written by 	: Paul Pierot
-* Last Modified : 2/20/2014
+* Last Modified : 3/6/2014
 * Description	: Gets the range of memory addresses to run
 *                   on, and checks to make sure they are not
 *                   inside the decompiler program
@@ -62,8 +62,8 @@ RANGE   LEA     RANGE_S,A1  ;Requests the starting address
         MOVE.L  #0,D4       ;+
         MOVE.W  A3,D3       ;Move the starting address into D3
         MOVE.W  A4,D4       ;Move the ending address into D4
-        CMP.W   D3,D4       ;If the ending address is less than the starting address, throw an error
-        BLT     INVALID     ;+
+        CMP.W   D4,D3       ;If the ending address is less than the starting address, throw an error
+        BGT     INVALID     ;+
         
         BRA     CLEAR       ;Start decompiling
         
@@ -91,10 +91,10 @@ HEX_BIN CMP.B   #71,D1      ;If the character is G or higher, throw an error
         CMP.B   #47,D1      ;If the character is / or lower, throw an error
         BLE     INVAL_C     ;+
         CMP.B   #57,D1      ;Determines if the character is 0~9 or A~F
-        BLE.B   ISNUMB      ;+
+        BLE     ISNUMB      ;+
         SUB.B   #55,D1      ;Character is A~F, and A is decimal 65, so subtract 55 to get the decimal value
         CMP.B   #64,D1      ;If the character is not a letter, throw an error
-        BGE.B   INVAL_C     ;+
+        BGE     INVAL_C     ;+
         BRA     STORE       ;Jumps to storing the character
 ISNUMB  SUB.B   #48,D1      ;Character is 0~9, and 0 is decimal 48, so subtract 48 to get the decimal value
 STORE   MOVE.B  D1,(A1)+    ;Stores the converted value into INPUT
@@ -198,6 +198,8 @@ CONT    DC.B    'Press any key to Continue',0
 INPUT   DS.B    16          ;Used for the conversion in GETHEX
 
         END     START
+
+
 
 
 
