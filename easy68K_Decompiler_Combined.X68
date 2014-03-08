@@ -15,6 +15,7 @@ START   ORG     $1000
 BEGIN   LEA     HEADER,A1   ;Displays the Header
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
+        MOVE.B  #0,D3       ;The loop counter starts at 0, goes to 30
         
 *---Input---
 LOOP    MOVE.B  #4,D0       ;Reads in Input
@@ -31,7 +32,7 @@ LOOP    MOVE.B  #4,D0       ;Reads in Input
 *-----------------------------------------------------------
 * Subroutine 	: RANGE
 * Written by 	: Paul Pierot
-* Last Modified : 3/6/2014
+* Last Modified : 3/8/2014
 * Description	: Gets the range of memory addresses to run
 *                   on, and checks to make sure they are not
 *                   inside the decompiler program
@@ -46,23 +47,23 @@ RANGE   LEA     RANGE_S,A1  ;Requests the starting address
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
         JSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
-        CMP.W   #DECOM_E,D3 ;If the Address is less than the ending address of the decompiler, throw an error
+        CMP.W   #DECOM_E,D5 ;If the Address is less than the ending address of the decompiler, throw an error
         BLE     INVALID     ;+
-        MOVEA.W D3,A3       ;Moves the starting address into A3
+        MOVEA.W D5,A3       ;Moves the starting address into A3
         
         LEA     RANGE_E,A1  ;Requests the ending address
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
         JSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
-        CMP.W   #DECOM_E,D3 ;If the Address is less than the ending address of the decompiler, throw an error
+        CMP.W   #DECOM_E,D5 ;If the Address is less than the ending address of the decompiler, throw an error
         BLE     INVALID     ;+
-        MOVEA.W D3,A4       ;Moves the ending address into A4
+        MOVEA.W D5,A4       ;Moves the ending address into A4
         
-        MOVE.L  #0,D3       ;Cleans out D3 & D4
+        MOVE.L  #0,D5       ;Cleans out D5 & D4
         MOVE.L  #0,D4       ;+
-        MOVE.W  A3,D3       ;Move the starting address into D3
+        MOVE.W  A3,D5       ;Move the starting address into D5
         MOVE.W  A4,D4       ;Move the ending address into D4
-        CMP.W   D4,D3       ;If the ending address is less than the starting address, throw an error
+        CMP.W   D4,D5       ;If the ending address is less than the starting address, throw an error
         BGT     INVALID     ;+
         
         BRA     decodeOp    ;Start decompiling
@@ -70,12 +71,12 @@ RANGE   LEA     RANGE_S,A1  ;Requests the starting address
 *-----------------------------------------------------------
 * Subroutine 	: GETHEX
 * Written by 	: Paul Pierot
-* Last Modified : 2/28/2014
+* Last Modified : 3/8/2014
 * Description	: Reads in the users input as a hexadecimal.
 *                   Can only read in 4 hexadecimals
 * Purpose       : To convert the users input into hexadecimal
 * Inputs		: N/A
-* Outputs		: D3 will contain the hexadecimal input
+* Outputs		: D5 will contain the hexadecimal input
 *-----------------------------------------------------------
 GETHEX  LEA     INPUT,A1    ;Loads the INPUT variable into A1
         CLR     D2          ;D2 holds the number of hexadecimals read
@@ -101,22 +102,22 @@ STORE   MOVE.B  D1,(A1)+    ;Stores the converted value into INPUT
         ADD     #1,D2       ;Increments to count the number of characters
         BRA     READHEX     ;Jump back to the READHEX loop
         
-HEXFIN  CLR     D3          ;D3 holds the final value
+HEXFIN  CLR     D5          ;D5 holds the final value
         MOVE.L  #16,D4      ;D4 is used to multiply by a power of 16
-        MOVE.B  -(A1),D3    ;Get the least significant byte
+        MOVE.B  -(A1),D5    ;Get the least significant byte
 GETNEXT SUB.B   #1,D2       ;Decrement the counter in D2 as we read in the next value
         TST.B   D2          ;If there's no more values to read, finish the subroutine
         BEQ     HEXDONE     ;+
-        MOVE.B  -(A1),D5    ;Gets the next hexadecimal
-        MULU    D4,D5       ;Multiplies the hexadecimal by a power of 16 to get the position
-        ADD.L   D5,D3       ;Adds the hexadecimal to the total
+        MOVE.B  -(A1),D6    ;Gets the next hexadecimal
+        MULU    D4,D6       ;Multiplies the hexadecimal by a power of 16 to get the position
+        ADD.L   D6,D5       ;Adds the hexadecimal to the total
         MULU    #16,D4      ;Increase the power
         BRA     GETNEXT     ;Loop back to GETNEXT
         
-HEXDONE MOVE.L  #0,D4       ;Clean out D4 & D5
-        MOVE.L  #0,D5       ;+
+HEXDONE MOVE.L  #0,D4       ;Clean out D4 & D6
+        MOVE.L  #0,D6       ;+
         RTS                 ;Return to the routine that called GETHEX
-
+        
 *-----------------------------------------------------------
 * Subroutine 	: INVALID
 * Written by 	: Paul Pierot
@@ -905,7 +906,7 @@ fourBitValue
 *-----------------------------------------------------------
 * Subroutine     : nextOp
 * Written by     : Jeff Graham
-* Last Modified  : 2/16/14
+* Last Modified  : 3/8/14 (by Paul Pierot)
 * Description    : Clears the op buffer, then checks for end of specified range.
 * Purpose        : Move to the next word of data to be decoded
 * Inputs         : None
@@ -914,15 +915,25 @@ fourBitValue
 nextOp
         *clear output buffer for next opcode
         LEA     opBuffer,A6
+        ADDI.B  #1,D3       ;Increment the loop counter
+        CMP.B   #31,D3      ;If 30 lines have been printed, branch to NXTPAGE
+        BGE     NXTPAGE     ;+
 clrLoop CMP.L   A6,A2
         BEQ     CheckEnd
+        
         MOVE.W  #0,(A6)+    *clear buffer a word at a time
         BRA     Loop
 CheckEnd
         *check for end of data
         CMP.L   A4,A3
-        BEQ     CLEAR       *Clear output and prompt user to loop
+        BEQ     ENDLOOP     *Clear output and prompt user to loop
+        
         BRA     decodeOp    *if not end decode next op
+        
+ENDLOOP LEA     ENDING,A1   ;Display a message saying that the end of memory has been reached
+        MOVE.B  #14,D0      ;+
+        TRAP    #15         ;+
+        BRA     CLEAR       ;Clear the screen and restart the program
 
 *-----------------------------------------------------------
 * Subroutine     : toOutputBuffer
@@ -1206,9 +1217,73 @@ unknownOp
         *TODO: Print Hex data
         BRA     nextOp
         
-*placeholder for SR
+*-----------------------------------------------------------
+* Subroutine 	: hexToASCII
+* Written by 	: Paul Pierot
+* Last Modified : 3/6/2014
+* Description	: Converts the hexadecimal in a register 
+*                   into ASCII code
+* Purpose       : To convert hexadecimal into ASCII for easy
+*                   printing
+* Inputs		: D1 will hold at least 1 bit of hexadecimal
+*                 D4 will hold the number of hexadecimal 
+*                   bits to read
+* Outputs		: The variable OUTPUT will hold the ASCII 
+*                   output
+*-----------------------------------------------------------
 hexToAscii
-        RTS
+        LEA     TEXT,A1     ;Loads the TEXT variable into A1
+        MOVE.B  D4,D6       ;D6 holds the original value of D4
+LOOPHEX TST.B   D6          ;If there are no more bits to convert, branch to LOOP_DN
+        BEQ     LOOP_DN     ;+
+        MOVE.B  D1,D5       ;D5 holds a copy of D1
+        ASR.L   #4,D1       ;Shift D1 over by one Hex bit
+        AND.B   #$0F,D5     ;Mask all but the least significant Hex bit
+        BRA     HEX_ASC     ;Convert the Hex bit into ASCII
+        
+HEX_ASC CMP.B   #$9,D5      ;Determines if the Hex is 0~9 or A~F
+        BLE     HEX_NUM     ;+
+        ADD.B   #55,D5      ;Hex is A~F, add decimal 55 to get the ASCII value
+        BRA     STORE2      ;Jump to storing the ASCII
+HEX_NUM ADD.B   #48,D5      ;Hex is 0~9, add decimal 48 to get the ASCII value
+STORE2  MOVE.B  D5,(A1)+    ;Stores the converted value in to OUTPUT
+        SUB.B   #1,D6       ;Decrements the number of Hexs to convert
+        BRA     LOOPHEX     ;Jump back to the LOOPHEX loop
+        
+LOOP_DN LEA     OUTPUT,A5   ;Loads the OUTPUT variable into A5
+ASCI_LP TST.B   D4          ;If there's no more characters to convert, finish the subroutine
+        BEQ     ASCI_DN     ;+
+        MOVE.B  -(A1),(A5)+ ;Moves one character from OUTPUT into TEXT
+        SUB.B   #1,D4       ;Decrements the number of character to convert
+        BRA     ASCI_LP     ;Begins the loop again
+
+ASCI_DN MOVE.B  #0,(A5)+    ;Move a NULL character into the end of the string
+        MOVEA.L #0,A5       ;Cleans out A5, D1, and D5
+        MOVE.L  #0,D1       ;+
+        CLR     D5          ;+
+        RTS                 ;Return to the routine that called hexToASCII
+        
+*-----------------------------------------------------------
+* Subroutine     : NXTPAGE
+* Written by     : Paul Pierot
+* Last Modified  : 3/6/14
+* Description    : Clears the screen and starts a new "page"
+* Purpose        : To allow the program to display page-by-page
+* Inputs         : N/A
+* Outputs        : N/A
+*-----------------------------------------------------------
+NXTPAGE MOVE.B  #0,D3       ;Zero out D3 for counting the loop
+        LEA     CONT,A1     ;Display a message for the user to continue
+        MOVE.B  #14,D0      ;+
+        TRAP    #15         ;+
+        MOVE.B  #4,D0       ;Reads in an input, not used
+        TRAP    #15         ;+
+        
+        MOVE.B  #11,D0      ;Clears the screen
+        MOVE.W  #$FF00,D1   ;+
+        TRAP    #15         ;+
+        
+        BRA     clrLoop     ;Return to check the next memory address
 
 *---Halt the Simulation---        
 EXIT    MOVE.B  #9,D0
@@ -1238,8 +1313,11 @@ INV_I   DC.B    'ERROR: Input must be valid.',CR,LF,0
 INV_C   DC.B    CR,LF,'ERROR: Invalid character. Values 0~9 or A~F only.',CR,LF
         DC.B    'Make sure you are using capital letters. This program does not allow deleting.',CR,LF,0
 CONT    DC.B    'Press any key to Continue',0   
+ENDING  DC.B    CR,LF,'End Memory Address reached. Now returning to the main screen.',CR,LF,0
 
 INPUT   DS.B    16          ;Used for the conversion in GETHEX
+TEXT    DS.B    16          ;Used for the conversion in hexToASCII subroutine
+OUTPUT  DS.B    16          ;The completed string for hexToASCII subroutine
 
 strUnknownOp    DC.B    'Unknown Op: ',0
 opBuffer        DS.W    32
@@ -1280,6 +1358,7 @@ strLSd          DC.B    'LSd',0
 strROd          DC.B    'ROd',0
 
         END     START
+
 
 
 
