@@ -640,10 +640,49 @@ opCMPI
 
 *group 1 opcodes
 opMOVEB
-        *Print opcode
-        LEA     strMOVEB,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strMOVEB,A6
+        BSR     toOutputBuffer
+
+
+        *store operation size
+        MOVE.L  #0,D4
+        
+        *source effective addressing
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        BSR     eaDecode    *decode EA
+        
+        
+        *add comma to buffer
+        MOVE.B  #44,(A2)+     *#44 is ascii val for comma
+        
+        *destination effective addressing
+        MOVE.B  #6,D6       *store mode
+        
+        *check invalid EAs
+        BSR     threeBitValue
+        *check An mode
+        CMPI.W  #1,D7
+        BEQ     unknownOp   *An invalid mode
+        *check #<data> mode (immediate data)
+        CMPI.W  #7,D7
+        BNE     opMOVEBDest *if not mode 7 move on
+        MOVE.B  #9,D6       *check register == 4
+        BSR     threeBitValue
+        CMPI.W  #4,D7
+        BEQ     unknownOp   *#<data> invalid mode
+        MOVE.B  #6,D6       *put mode bit start back into register
+        
+        BSR     printBuffer
+        BRA     nextOp
+        
+opMOVEBDest
+        MOVE.B  #9,D5       *store register
+        BSR     eaDecode    *decode EA
+        
+        BSR     printBuffer
                 
         BRA     nextOp
 
@@ -905,8 +944,8 @@ fourBitValue
         
 *-----------------------------------------------------------
 * Subroutine     : nextOp
-* Written by     : Jeff Graham
-* Last Modified  : 3/8/14 (by Paul Pierot)
+* Written by     : Jeff Graham, Paul Pierot
+* Last Modified  : 3/10/14
 * Description    : Clears the op buffer, then checks for end of specified range.
 * Purpose        : Move to the next word of data to be decoded
 * Inputs         : None
@@ -918,11 +957,10 @@ nextOp
         ADDI.B  #1,D3       ;Increment the loop counter
         CMP.B   #31,D3      ;If 30 lines have been printed, branch to NXTPAGE
         BGE     NXTPAGE     ;+
-clrLoop CMP.L   A6,A2
+clrLoop CMPA.L  A6,A2
         BEQ     CheckEnd
-        
-        MOVE.W  #0,(A6)+    *clear buffer a word at a time
-        BRA     Loop
+        MOVE.B  #0,(A6)+    *clear buffer a byte at a time
+        BRA     clrLoop
 CheckEnd
         *check for end of data
         CMP.L   A4,A3
@@ -947,17 +985,30 @@ ENDLOOP LEA     ENDING,A1   ;Display a message saying that the end of memory has
 *                   string to be copied
 *-----------------------------------------------------------
 toOutputBuffer
-        CMP.W   #0,(A6)
+        CMPI.B  #0,(A6)
         BEQ     endOfString     *if == 0, end
-        MOVE.W  (A6)+,(A2)+     *copy value to buffer and increment
+        MOVE.B  (A6)+,(A2)+     *copy value to buffer and increment
         BRA     toOutputBuffer  *loop
         
 endOfString
         *end string and return
-        MOVE.W  #$00,(A2)   *add null to end
+        MOVE.B  #$00,(A2)   *add null to end
         RTS
         
-        
+*-----------------------------------------------------------
+* Subroutine     : printBuffer
+* Written by     : Jeff Graham
+* Last Modified  : 3/7/14
+* Description    : Prints the output buffer
+* Purpose        : Primary use is to print opcodes
+* Inputs         : None
+*-----------------------------------------------------------
+printBuffer
+        LEA     opBuffer,A1
+        MOVE.B  #13,D0
+        TRAP    #15
+
+
 *-----------------------------------------------------------
 * Subroutine     : eaDecode
 * Written by     : Jeff Graham
@@ -997,16 +1048,16 @@ eaDecode
         *Modes
 modeDataReg
         *move register and number to output buffer
-        MOVE.W      #68,(A2)+       *move 'D' to output buffer, (68 is ascii for D)
+        MOVE.B      #68,(A2)+       *move 'D' to output buffer, (68 is ascii for D)
         
         *get register number
         MOVE.W      D5,D6
         BSR         threeBitValue
         *buffer register number
-        ADD.W       #48,D7      *convert number to ascii
-        MOVE.W      D7,(A2)+
+        ADD.B       #48,D7      *convert number to ascii
+        MOVE.B      D7,(A2)+
         *add null terminator to buffer
-        MOVE.W      #0,(A2)     *note: no post inc, so that null will be overwritten by next character
+        MOVE.B      #0,(A2)     *note: no post inc, so that null will be overwritten by next character
         RTS
         
 modeAddressReg
@@ -1017,13 +1068,13 @@ modeAddressReg
         BEQ         unknownOp
         
         *move register and number to output buffer
-        MOVE.W      #65,(A2)+   *move 'A' to buffer, 65 is ascii for A
+        MOVE.B      #65,(A2)+   *move 'A' to buffer, 65 is ascii for A
         
         *buffer register number
-        ADD.W       #48,D7      *convert number to ascii
-        MOVE.W      D7,(A2)+    *buffer register num
+        ADD.B       #48,D7      *convert number to ascii
+        MOVE.B      D7,(A2)+    *buffer register num
         *add null terminator
-        MOVE.W      #0,(A2)
+        MOVE.B      #0,(A2)
         RTS
 
 
@@ -1037,20 +1088,20 @@ modeIndirAddress
         
         *buffer register and number
         *buffer ( here
-        MOVE.W      #40,(A2)+   *40 is ascii for (
+        MOVE.B      #40,(A2)+   *40 is ascii for (
         
         *buffer A here
-        MOVE.W      #65,(A2)+   *65 is ascii for A
+        MOVE.B      #65,(A2)+   *65 is ascii for A
                 
         *buffer register number
-        ADD.W       #48,D7      *convert number to ascii
-        MOVE.W      D7,(A2)+    *buffer register
+        ADD.B       #48,D7      *convert number to ascii
+        MOVE.B      D7,(A2)+    *buffer register
                 
         *buffer ) here
-        MOVE.W      #41,(A2)+      *41 is ascii for )
+        MOVE.B      #41,(A2)+      *41 is ascii for )
 
         *add null terminator to buffer
-        MOVE.W      #0,(A2)
+        MOVE.B      #0,(A2)
         
         RTS
 
@@ -1063,23 +1114,23 @@ modePostInc
         
         *buffer register and number
         *buffer ( here
-        MOVE.W      #40,(A2)+   *40 is ascii for (
+        MOVE.B      #40,(A2)+   *40 is ascii for (
                 
         *buffer A here
-        MOVE.W      #65,(A2)+      *65 is ascii for A
+        MOVE.B      #65,(A2)+      *65 is ascii for A
                 
         *buffer register number
-        ADD.W       #48,D7      *convert number to ascii
-        MOVE.W      D7,(A2)+
+        ADD.B       #48,D7      *convert number to ascii
+        MOVE.B      D7,(A2)+
                 
         *buffer ) here
-        MOVE.W      #41,(A2)+      *41 is ascii for )
+        MOVE.B      #41,(A2)+      *41 is ascii for )
                 
         *buffer + here
-        MOVE.W      #43,(A2)+      *43 is ascii for +
+        MOVE.B      #43,(A2)+      *43 is ascii for +
 
         *add null terminator to buffer
-        MOVE.W      #0,(A2)
+        MOVE.B      #0,(A2)
                 
         RTS
 
@@ -1092,29 +1143,29 @@ modePreDec
         
         *buffer register and number
         *buffer - here
-        MOVE.W      #45,(A2)+      *45 is ascii for -
+        MOVE.B      #45,(A2)+      *45 is ascii for -
                 
         *buffer ( here
-        MOVE.W      #40,(A2)+      *40 is ascii for (
+        MOVE.B      #40,(A2)+      *40 is ascii for (
                 
         *buffer A here
-        MOVE.W      #65,(A2)+      *65 is ascii for A
+        MOVE.B      #65,(A2)+      *65 is ascii for A
                 
         *buffer register number
-        ADD.W       #48,D7      *convert number to ascii
-        MOVE.W      D7,(A2)+
+        ADD.B       #48,D7      *convert number to ascii
+        MOVE.B      D7,(A2)+
                 
         *buffer ) here
-        MOVE.W      #41,(A2)+      *41 is ascii for )
+        MOVE.B      #41,(A2)+      *41 is ascii for )
                 
         *add null terminator to buffer
-        MOVE.W      #0,(A2)
+        MOVE.B      #0,(A2)
 
         RTS
 
 modeSeven
         *move $ to output buffer
-        MOVE.W      #36,(A2)+       *36 is ascii code for $
+        MOVE.B      #36,(A2)+       *36 is ascii code for $
 
         *check register
         MOVE.W      D5,D6
@@ -1320,7 +1371,7 @@ TEXT    DS.B    16          ;Used for the conversion in hexToASCII subroutine
 OUTPUT  DS.B    16          ;The completed string for hexToASCII subroutine
 
 strUnknownOp    DC.B    'Unknown Op: ',0
-opBuffer        DS.W    32
+opBuffer        DS.B    32
 
 *opcode strings
 strADDI         DC.B    'ADDI',0
@@ -1328,15 +1379,15 @@ strANDI         DC.B    'ANDI',0
 strEORI         DC.B    'EORI',0
 strBCHG         DC.B    'BCHG',0
 strCMPI         DC.B    'CMPI',0
-strMOVEB        DC.B    'MOVE.B',0
-strMOVEL        DC.B    'MOVE.L',0
-strMOVEW        DC.B    'MOVE.W',0
+strMOVEB        DC.B    'MOVE.B ',0
+strMOVEL        DC.B    'MOVE.L ',0
+strMOVEW        DC.B    'MOVE.W ',0
 strMOVEM        DC.B    'MOVEM',0
 strLEA          DC.B    'LEA',0
 strCLR          DC.B    'CLR',0
 strJSR          DC.B    'JSR',0
 strRTS          DC.B    'RTS',0
-strMULSL        DC.B    'MULS.L',0
+strMULSL        DC.B    'MULS.L ',0
 strSUBQ         DC.B    'SUBQ',0
 strBCC          DC.B    'BCC',0
 strBGT          DC.B    'BGT',0
@@ -1349,7 +1400,7 @@ strSUBA         DC.B    'SUBA',0
 strEOR          DC.B    'EOR',0
 strCMP          DC.B    'CMP',0
 strCMPA         DC.B    'CMPA',0
-strMULSW        DC.B    'MULS.W',0
+strMULSW        DC.B    'MULS.W ',0
 strAND          DC.B    'AND',0
 strADD          DC.B    'ADD',0
 strADDA         DC.B    'ADDA',0
