@@ -180,6 +180,7 @@ CLEAR   LEA     CONT,A1     ;Display a continue message
 decodeOp
         *Initialize variables
         LEA         opBuffer,A2     *set op buffer ptr
+        CLR.L       D2              *clear old opcode
         MOVE.W      (A3),D2         *store opcode in D2 for processing
         ADDA.L      #2,A3           *advance ptr
 
@@ -659,24 +660,11 @@ opMOVEB
         MOVE.B  #44,(A2)+     *#44 is ascii val for comma
         
         *destination effective addressing
-        MOVE.B  #6,D6       *store mode
+        *set invalid EA mask
+        BSET    #30,D2
+        BSET    #24,D2
         
-        *check invalid EAs
-        BSR     threeBitValue
-        *check An mode
-        CMPI.W  #1,D7
-        BEQ     unknownOp   *An invalid mode
-        *check #<data> mode (immediate data)
-        CMPI.W  #7,D7
-        BNE     opMOVEBDest *if not mode 7 move on
-        MOVE.B  #9,D6       *check register == 4
-        BSR     threeBitValue
-        CMPI.W  #4,D7
-        BEQ     unknownOp   *#<data> invalid mode
-        MOVE.B  #6,D6       *put mode bit start back into register
-
-        *fall through to decode destination addressing        
-opMOVEBDest
+        MOVE.B  #6,D6       *store mode
         MOVE.B  #9,D5       *store register
         BSR     eaDecode    *decode EA
         
@@ -686,21 +674,71 @@ opMOVEBDest
 
 *group 2 opcodes
 opMOVEL
-        *Print opcode
-        LEA     strMOVEL,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strMOVEL,A6
+        BSR     toOutputBuffer
+
+
+        *store operation size
+        MOVE.L  #2,D4
+        
+        *source effective addressing
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        BSR     eaDecode    *decode EA
+        
+        
+        *add comma to buffer
+        MOVE.B  #44,(A2)+     *#44 is ascii val for comma
+        
+        *destination effective addressing
+        *set invalid EA mask
+        BSET    #30,D2
+        BSET    #24,D2
+
+        MOVE.B  #6,D6       *store mode
+        MOVE.B  #9,D5       *store register
+        BSR     eaDecode    *decode EA
+        
+        BSR     printBuffer
                 
         BRA     nextOp
 
+
 *group 3 opcodes
 opMOVEW
-        *Print opcode
-        LEA     strMOVEW,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strMOVEW,A6
+        BSR     toOutputBuffer
+
+
+        *store operation size
+        MOVE.L  #1,D4
+        
+        *source effective addressing
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        BSR     eaDecode    *decode EA
+        
+        
+        *add comma to buffer
+        MOVE.B  #44,(A2)+     *#44 is ascii val for comma
+        
+        *destination effective addressing
+        *set invalid EA mask
+        BSET    #30,D2
+        BSET    #24,D2
+
+        MOVE.B  #6,D6       *store mode
+        MOVE.B  #9,D5       *store register
+        BSR     eaDecode    *decode EA
+        
+        BSR     printBuffer
                 
         BRA     nextOp
+
         
 *group 4 opcodes
 opMOVEMMtoR
@@ -720,39 +758,119 @@ opMOVEMRtoM
         BRA     nextOp
         
 opLEA
-        *Print opcode
-        LEA     strLEA,A1
-        MOVE.W  #13,D0
-        TRAP    #15
-                
+        *buffer opcode
+        LEA     strLEA,A6
+        BSR     toOutputBuffer
+        
+        *set invalid ea mask
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #28,D2
+        BSET    #27,D2
+        BSET    #24,D2
+
+        *source EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        BSR     eaDecode    *get source EA
+        
+        *add comma to buffer
+        MOVE.B  #44,(A2)+     *#44 is ascii val for comma
+        
+        *buffer A
+        MOVE.B  #65,(A2)+
+
+        *get destination register
+        MOVE.B  #9,D6
+        
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *Add null to end of string
+        MOVE.B  #0,(A2)
+        
+        BSR     printBuffer        
         BRA     nextOp
         
 opCLR
-        *Print opcode
-        LEA     strCLR,A1
-        MOVE.W  #13,D0
-        TRAP    #15
-                
+        *buffer opcode
+        LEA     strCLR,A6
+        BSR     toOutputBuffer
+        
+        *get operation size
+        BFEXTU  D2{#24:#2},D4   *get size bits
+        CMPI.B  #0,D4
+        BEQ     opCLRB
+        CMPI.B  #1,D4
+        BEQ     opCLRW
+        CMPI.B  #2,D4
+        BEQ     opCLRL
+        BRA     unknownOp       *size 3 is invalid
+        
+opCLRB
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opCLREnd
+opCLRW
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opCLREnd
+
+opCLRL
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opCLREnd
+
+opCLREnd
+        *decode EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *set invalid EA mask
+        BSET    #30,D2
+        BSET    #24,D2
+        
+        BSR     eaDecode    *get source EA
+        
+        BSR     printBuffer        
         BRA     nextOp
+
         
 opJSR
-        *Print opcode
-        LEA     strJSR,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strJSR,A6
+        BSR     toOutputBuffer
         
+        *set invalid mode mask
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #28,D2
+        BSET    #27,D2
+        BSET    #24,D2
+        
+        *store mode and register bits
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+
+        BSR     eaDecode    *get source EA
+        
+        BSR     printBuffer        
         BRA     nextOp
+
         
 opRTS
         *Print opcode
-        LEA     strRTS,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strRTS,A6
+        BSR     toOutputBuffer
+        
+        BSR     printBuffer
         
         BRA     nextOp        
         
 opMULSL
-        *Print opcode
+        *buffer opcode
         LEA     strMULSL,A1
         MOVE.W  #13,D0
         TRAP    #15
@@ -761,10 +879,61 @@ opMULSL
 
 *group 5 opcodes
 opSUBQ
-        *Print opcode
-        LEA     strSUBQ,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strSUBQ,A6
+        BSR     toOutputBuffer
+
+        *get operation size
+        BFEXTU  D2{#24:#2},D4   *get size bits
+        CMPI.B  #0,D4
+        BEQ     opSUBQB
+        CMPI.B  #1,D4
+        BEQ     opSUBQW
+        CMPI.B  #2,D4
+        BEQ     opSUBQL
+        BRA     unknownOp       *size 3 is invalid
+
+opSUBQB
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opSUBQEnd
+        
+opSUBQW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opSUBQEnd
+
+opSUBQL
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opSUBQEnd
+
+opSUBQEnd
+        *get immediate data
+        MOVE.B  #9,D6       *data bit offset
+        BSR     threeBitValue
+        
+        *buffer immediate data
+        MOVE.B  #35,(A2)+   *buffer #
+        ADDI.B  #48,D7      *convert # to ascii
+        MOVE.B  D7,(A2)+    *buffer immediate data
+        MOVE.B  #44,(A2)+   *buffer ,
+        
+        *check destination addressing
+        *set invalid ea mask
+        BSET    #24,D2
+        
+        *store mode and register bits
+        MOVE.B  #0,D5
+        MOVE.B  #3,D6
+        
+        BSR     eaDecode
+        
+        BSR     printBuffer
+        
         
         BRA     nextOp
         
@@ -1010,7 +1179,7 @@ printBuffer
 *-----------------------------------------------------------
 * Subroutine     : eaDecode
 * Written by     : Jeff Graham
-* Last Modified  : 3/3/14
+* Last Modified  : 3/10/14
 * Description    : Given an opcode and the starting bit position of mode and register
 *                   three-bit pairs, this decodes the addressing mode and moves 
 *                   appropriate string to output buffer
@@ -1045,6 +1214,10 @@ eaDecode
         
         *Modes
 modeDataReg
+        *check valid
+        BTST        #31,D2
+        BNE         unknownOp   *if set, then Dn is invalid mode
+        
         *move register and number to output buffer
         MOVE.B      #68,(A2)+       *move 'D' to output buffer, (68 is ascii for D)
         
@@ -1059,6 +1232,10 @@ modeDataReg
         RTS
         
 modeAddressReg
+        *check valid
+        BTST        #30,D2
+        BNE         unknownOp   *if set, then An is invalid mode
+        
         *check valid register
         MOVE.W      D5,D6
         BSR         threeBitValue
@@ -1078,6 +1255,10 @@ modeAddressReg
 
 
 modeIndirAddress
+        *check valid
+        BTST        #29,D2
+        BNE         unknownOp   *if set, then (An) is invalid mode
+        
         *check valid register
         MOVE.W      D5,D6
         BSR         threeBitValue
@@ -1104,6 +1285,10 @@ modeIndirAddress
         RTS
 
 modePostInc
+        *check valid
+        BTST        #28,D2
+        BNE         unknownOp   *if set, then (An)+ is invalid mode
+        
         *check valid register
         MOVE.W      D5,D6
         BSR         threeBitValue
@@ -1133,6 +1318,10 @@ modePostInc
         RTS
 
 modePreDec
+        *check valid
+        BTST        #27,D2
+        BNE         unknownOp   *if set, then -(An) is invalid mode
+        
         *check valid register
         MOVE.W      D5,D6
         BSR         threeBitValue
@@ -1175,6 +1364,10 @@ modeSeven
         BRA         unknownOp
 
 modeAbsWord
+        *check valid
+        BTST        #26,D2
+        BNE         unknownOp   *if set, then (xxx).W is invalid mode
+        
         *move $ to output buffer
         MOVE.B      #36,(A2)+       *36 is ascii code for $
         *convert word data at (A3) to ascii hex
@@ -1193,6 +1386,10 @@ modeAbsWord
         RTS
 
 modeAbsLong
+        *check valid
+        BTST        #25,D2
+        BNE         unknownOp   *if set, then (xxx).L is invalid mode
+        
         *move $ to output buffer
         MOVE.B      #36,(A2)+       *36 is ascii code for $
         *convert Longword data at (A3) to ascii hex digits
@@ -1210,6 +1407,10 @@ modeAbsLong
         RTS
 
 modeImmediate
+        *check valid
+        BTST        #24,D2
+        BNE         unknownOp   *if set, then #<data> is invalid mode
+        
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
         *move $ to output buffer
@@ -1414,9 +1615,9 @@ strMOVEB        DC.B    'MOVE.B ',0
 strMOVEL        DC.B    'MOVE.L ',0
 strMOVEW        DC.B    'MOVE.W ',0
 strMOVEM        DC.B    'MOVEM',0
-strLEA          DC.B    'LEA',0
+strLEA          DC.B    'LEA ',0
 strCLR          DC.B    'CLR',0
-strJSR          DC.B    'JSR',0
+strJSR          DC.B    'JSR ',0
 strRTS          DC.B    'RTS',0
 strMULSL        DC.B    'MULS.L ',0
 strSUBQ         DC.B    'SUBQ',0
@@ -1438,8 +1639,12 @@ strADDA         DC.B    'ADDA',0
 strASd          DC.B    'ASd',0
 strLSd          DC.B    'LSd',0
 strROd          DC.B    'ROd',0
+strByte         DC.B    '.B ',0
+strWord         DC.B    '.W ',0
+strLong         DC.B    '.L ',0
 
         END     START
+
 
 
 
