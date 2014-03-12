@@ -18,21 +18,24 @@ BEGIN   LEA     HEADER,A1   ;Displays the Header
         MOVE.B  #0,D3       ;The loop counter starts at 0, goes to 30
         
 *---Input---
-LOOP    MOVE.B  #4,D0       ;Reads in Input
+LOOP    MOVE.B  #5,D0       ;Reads in Input
         TRAP    #15         ;+
-        CMP.B   #1,D1       ;Compares Input to 1
-        BEQ     RANGE       ;Branch to Decompiler code if Input = 1
+        CMP.B   #89,D1      ;Branch to Decompiler code if Input = "Y" or "y"
+        BEQ     RANGE       ;+
+        CMP.B   #121,D1     ;+
+        BEQ     RANGE       ;+
         
-        CMP.B   #0,D1       ;Compares Input to 0
-        BEQ     EXIT        ;Branch to Exit if Input = 0
+        CMP.B   #78,D1      ;Branch to Exit if Input = "N" or "n"
+        BEQ     EXIT        ;+
+        CMP.B   #110,D1     ;+
+        BEQ     EXIT        ;+
         
-        CMP.B   #1,D1       ;Compares Input to 1
-        BGT     INVALID     ;Branch to Invalid if Input > 1
+        BRA     INVALID     ;Input is invalid
         
 *-----------------------------------------------------------
 * Subroutine 	: RANGE
 * Written by 	: Paul Pierot
-* Last Modified : 3/8/2014
+* Last Modified : 3/11/2014
 * Description	: Gets the range of memory addresses to run
 *                   on, and checks to make sure they are not
 *                   inside the decompiler program
@@ -46,7 +49,7 @@ LOOP    MOVE.B  #4,D0       ;Reads in Input
 RANGE   LEA     RANGE_S,A1  ;Requests the starting address
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
-        JSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
+        BSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
         CMP.W   #DECOM_E,D5 ;If the Address is less than the ending address of the decompiler, throw an error
         BLE     INVALID     ;+
         MOVEA.W D5,A3       ;Moves the starting address into A3
@@ -54,7 +57,7 @@ RANGE   LEA     RANGE_S,A1  ;Requests the starting address
         LEA     RANGE_E,A1  ;Requests the ending address
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
-        JSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
+        BSR     GETHEX      ;Gets the user's input and converts it into a hexadecimal address
         CMP.W   #DECOM_E,D5 ;If the Address is less than the ending address of the decompiler, throw an error
         BLE     INVALID     ;+
         MOVEA.W D5,A4       ;Moves the ending address into A4
@@ -66,6 +69,10 @@ RANGE   LEA     RANGE_S,A1  ;Requests the starting address
         CMP.W   D4,D5       ;If the ending address is less than the starting address, throw an error
         BGT     INVALID     ;+
         
+        LEA     VALID,A1    ;Let the user know their input was valid
+        MOVE.B  #14,D0      ;+
+        TRAP    #15         ;+
+        BSR     CLEAR       ;Clear the screen
         BRA     decodeOp    ;Start decompiling
         
 *-----------------------------------------------------------
@@ -121,7 +128,7 @@ HEXDONE MOVE.L  #0,D4       ;Clean out D4 & D6
 *-----------------------------------------------------------
 * Subroutine 	: INVALID
 * Written by 	: Paul Pierot
-* Last Modified : 2/19/2014
+* Last Modified : 3/11/2014
 * Description	: Displays a generic warning to the user
 * Purpose       : To alert the user of invalid input
 * Inputs		: N/A
@@ -130,21 +137,25 @@ HEXDONE MOVE.L  #0,D4       ;Clean out D4 & D6
 INVALID LEA     INV_I,A1    ;Displays a warning message
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
-        BRA     CLEAR       ;Branch to CLEAR
+        BSR     CLEAR       ;Clear the screen
+        BSR     EMPTY       ;Clean out the registers
+        BRA     BEGIN       ;Branches back to the Header
 
 *-----------------------------------------------------------
 * Subroutine 	: INVAL_C
 * Written by 	: Paul Pierot
-* Last Modified : 2/28/2014
+* Last Modified : 3/11/2014
 * Description	: Displays a warning to the user
 * Purpose       : To alert the user of an invalid character
 * Inputs		: N/A
 * Outputs		: N/A
 *-----------------------------------------------------------         
-INVAL_C LEA     INV_C,A1
-        MOVE.B  #14,D0
-        TRAP    #15
-        BRA     CLEAR
+INVAL_C LEA     INV_C,A1    ;Displays a warning message
+        MOVE.B  #14,D0      ;+
+        TRAP    #15         ;+
+        BSR     CLEAR       ;Clear the screen
+        BSR     EMPTY       ;Clean out the registers
+        BRA     BEGIN       ;Branches back to the Header
         
 *-----------------------------------------------------------
 * Subroutine 	: CLEAR
@@ -165,7 +176,7 @@ CLEAR   LEA     CONT,A1     ;Display a continue message
         MOVE.B  #11,D0      ;Clears the screen
         MOVE.W  #$FF00,D1   ;+
         TRAP    #15         ;+
-        BRA     BEGIN       ;Branches back to the Header
+        RTS
 
 
 *-----------------------------------------------------------
@@ -1874,7 +1885,7 @@ opSubEa
         BSR     eaDecode
         
         *buffer ,
-        MOVE.B  #36,(A2)+
+        MOVE.B  #44,(A2)+
         
         *buffer D
         MOVE.B  #68,(A2)+
@@ -2113,7 +2124,7 @@ fourBitValue
 *-----------------------------------------------------------
 * Subroutine     : nextOp
 * Written by     : Jeff Graham, Paul Pierot
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Clears the op buffer, then checks for end of specified range.
 * Purpose        : Move to the next word of data to be decoded
 * Inputs         : None
@@ -2123,7 +2134,7 @@ nextOp
         *clear output buffer for next opcode
         LEA     opBuffer,A6
         ADDI.B  #1,D3       ;Increment the loop counter
-        CMP.B   #31,D3      ;If 30 lines have been printed, branch to NXTPAGE
+        CMP.B   #23,D3      ;If 23 lines have been printed, branch to NXTPAGE
         BGE     NXTPAGE     ;+
 clrLoop CMPA.L  A6,A2
         BEQ     CheckEnd
@@ -2136,10 +2147,13 @@ CheckEnd
         
         BRA     decodeOp    *if not end decode next op
         
-ENDLOOP LEA     ENDING,A1   ;Display a message saying that the end of memory has been reached
+ENDLOOP BSR     CLEAR       ;Clear the screen
+        LEA     ENDING,A1   ;Display a message saying that the end of memory has been reached
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
-        BRA     CLEAR       ;Clear the screen and restart the program
+        BSR     CLEAR       ;Clear the screen and restart the program
+        BSR     EMPTY       ;Clean out the Registers
+        BRA     BEGIN       ;+
 
 *-----------------------------------------------------------
 * Subroutine     : toOutputBuffer
@@ -2550,24 +2564,42 @@ ASCI_DN MOVE.B  #0,(A5)+    ;Move a NULL character into the end of the string
 *-----------------------------------------------------------
 * Subroutine     : NXTPAGE
 * Written by     : Paul Pierot
-* Last Modified  : 3/6/14
+* Last Modified  : 3/11/14
 * Description    : Clears the screen and starts a new "page"
 * Purpose        : To allow the program to display page-by-page
 * Inputs         : N/A
 * Outputs        : N/A
 *-----------------------------------------------------------
 NXTPAGE MOVE.B  #0,D3       ;Zero out D3 for counting the loop
-        LEA     CONT,A1     ;Display a message for the user to continue
-        MOVE.B  #14,D0      ;+
-        TRAP    #15         ;+
-        MOVE.B  #4,D0       ;Reads in an input, not used
-        TRAP    #15         ;+
-        
-        MOVE.B  #11,D0      ;Clears the screen
-        MOVE.W  #$FF00,D1   ;+
-        TRAP    #15         ;+
+        BSR     CLEAR
         
         BRA     clrLoop     ;Return to check the next memory address
+        
+*-----------------------------------------------------------
+* Subroutine     : EMPTY
+* Written by     : Paul Pierot
+* Last Modified  : 3/11/14
+* Description    : Zeros out all Data and Address Registers
+* Purpose        : To allow a clean restart of the program
+* Inputs         : N/A
+* Outputs        : N/A
+*-----------------------------------------------------------
+EMPTY   MOVE.L  #0,D0
+        MOVE.L  #0,D1
+        MOVE.L  #0,D2
+        MOVE.L  #0,D3
+        MOVE.L  #0,D4
+        MOVE.L  #0,D5
+        MOVE.L  #0,D6
+        MOVE.L  #0,D7
+        MOVEA.L #0,A0
+        MOVEA.L #0,A1
+        MOVEA.L #0,A2
+        MOVEA.L #0,A3
+        MOVEA.L #0,A4
+        MOVEA.L #0,A5
+        MOVEA.L #0,A6
+        RTS                 ;Returns to the routine that called EMPTY
 
 *---Halt the Simulation---        
 EXIT    MOVE.B  #9,D0
@@ -2590,14 +2622,15 @@ HEADER  DC.B    '+----------------------------------------------------------+',C
         DC.B    '|   Hardware Buddies                                       |',CR,LF
         DC.B    '|              Jeff Graham, David Lambert, Paul Pierot     |',CR,LF
         DC.B    '+----------------------------------------------------------+',CR,LF,CR,LF
-        DC.B    'Begin Decompiler? ("1" to continue, "0" to quit): ',CR,LF,0
-RANGE_S DC.B    'Enter the starting memory address: ',CR,LF,0
+        DC.B    'Begin Decompiler? ("Y" to continue, "N" to quit): ',CR,LF,0
+RANGE_S DC.B    CR,LF,'Enter the starting memory address: ',CR,LF,0
 RANGE_E DC.B    'Enter the ending memory address: ',CR,LF,0
-INV_I   DC.B    'ERROR: Input must be valid.',CR,LF,0
+VALID   DC.B    CR,LF,'Memory range is valid. Beginning decompiler',CR,LF,0
+INV_I   DC.B    CR,LF,'ERROR: Input must be valid.',CR,LF,0
 INV_C   DC.B    CR,LF,'ERROR: Invalid character. Values 0~9 or A~F only.',CR,LF
         DC.B    'Make sure you are using capital letters. This program does not allow deleting.',CR,LF,0
-CONT    DC.B    'Press any key to Continue',0   
-ENDING  DC.B    CR,LF,'End Memory Address reached. Now returning to the main screen.',CR,LF,0
+CONT    DC.B    CR,LF,'Press any key to Continue',0   
+ENDING  DC.B    'End Memory Address reached. Now returning to the main screen.',CR,LF,0
 
 INPUT   DS.B    16          ;Used for the conversion in GETHEX
 TEXT    DS.B    16          ;Used for the conversion in hexToASCII subroutine
@@ -2626,7 +2659,7 @@ strBCC          DC.B    'BCC ',0
 strBGT          DC.B    'BGT ',0
 strBLE          DC.B    'BLE ',0
 strBVS          DC.B    'BVS ',0
-strMOVEQ        DC.B    'MOVEQ',0
+strMOVEQ        DC.B    'MOVEQ ',0
 strDIVU         DC.B    'DIVU',0
 strSUB          DC.B    'SUB',0
 strSUBA         DC.B    'SUBA',0
@@ -2645,23 +2678,6 @@ strWord         DC.B    '.W ',0
 strLong         DC.B    '.L ',0
 
         END     START
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *~Font name~Courier New~
 *~Font size~10~
