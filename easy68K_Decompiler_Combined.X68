@@ -7,7 +7,6 @@
 CR      EQU     $0D
 LF      EQU     $0A
 DECOM_S EQU     $1000       ;Defining the starting address of the Decompiler
-DECOM_E EQU     $2000       ;Defining the ending address of the Decompiler
 
 START   ORG     $1000
 
@@ -15,7 +14,7 @@ START   ORG     $1000
 BEGIN   LEA     HEADER,A1   ;Displays the Header
         MOVE.B  #14,D0      ;+
         TRAP    #15         ;+
-        MOVE.B  #0,D3       ;The loop counter starts at 0, goes to 30
+        MOVE.B  #0,D3       ;The loop counter starts at 0, goes to 29
         
 *---Input---
 LOOP    MOVE.B  #5,D0       ;Reads in Input
@@ -181,8 +180,8 @@ CLEAR   LEA     CONT,A1     ;Display a continue message
 
 *-----------------------------------------------------------
 * Subroutine     : decodeOp
-* Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Written by     : Jeff Graham, Paul Pierot
+* Last Modified  : 3/11/14
 * Description    : sorts opcodes according to groups based on their first 4-bits
 * Purpose        : The first step in decoding an opcode
 * Inputs         : None (depends on the opcode pointer being A3)
@@ -193,6 +192,14 @@ decodeOp
         LEA         opBuffer,A2     *set op buffer ptr
         CLR.L       D2              *clear old opcode
         MOVE.W      (A3),D2         *store opcode in D2 for processing
+        MOVE.W      A3,D1           ;Convert the memory address into ASCII text
+        MOVE.B      #4,D4           ;+
+        BSR         hexToASCII      ;+
+        LEA         OUTPUT,A1       ;Print the memory address to the screen
+        MOVE.B      #14,D0          ;+
+        TRAP        #15             ;+
+        LEA         COLON,A1        ;Print ": " for readability
+        TRAP        #15             ;+
         ADDA.L      #2,A3           *advance ptr
 
         *get first four bit value
@@ -2134,7 +2141,7 @@ nextOp
         *clear output buffer for next opcode
         LEA     opBuffer,A6
         ADDI.B  #1,D3       ;Increment the loop counter
-        CMP.B   #23,D3      ;If 23 lines have been printed, branch to NXTPAGE
+        CMP.B   #29,D3      ;If 29 lines have been printed, branch to NXTPAGE
         BGE     NXTPAGE     ;+
 clrLoop CMPA.L  A6,A2
         BEQ     CheckEnd
@@ -2143,7 +2150,7 @@ clrLoop CMPA.L  A6,A2
 CheckEnd
         *check for end of data
         CMP.L   A4,A3
-        BEQ     ENDLOOP     *Clear output and prompt user to loop
+        BGE     ENDLOOP     *Clear output and prompt user to loop
         
         BRA     decodeOp    *if not end decode next op
         
@@ -2499,8 +2506,8 @@ threeBitValue
 
 *-----------------------------------------------------------
 * Subroutine     : unknownOp
-* Written by     : Jeff Graham
-* Last Modified  : 2/15/14
+* Written by     : Jeff Graham, Paul Pierot
+* Last Modified  : 3/11/14
 * Description    : Prints unknown op error & hex word data, advances data pointer, 
 *                   and calls decodeOp to start the next word.
 * Purpose        : To handle an unknown or invalid opcode.
@@ -2510,9 +2517,17 @@ threeBitValue
 unknownOp
         *Print error message and hex data here
         LEA     strUnknownOp,A1
-        MOVE.B  #13,D0
+        MOVE.B  #14,D0
         TRAP    #15
-        *TODO: Print Hex data
+        
+        MOVE.W  (A3),D1     ;Convert one word of hex into ASCII
+        MOVE.L  #4,D4       ;+
+        BSR     hexToAscii  ;+
+        ADDA.L  #2,A3       ;Move the pointer forward one word
+        LEA     OUTPUT,A1   ;Prints the unknown hex data
+        MOVE.B  #13,D0      ;+
+        TRAP    #15         ;+
+        
         BRA     nextOp
         
 *-----------------------------------------------------------
@@ -2629,8 +2644,9 @@ VALID   DC.B    CR,LF,'Memory range is valid. Beginning decompiler',CR,LF,0
 INV_I   DC.B    CR,LF,'ERROR: Input must be valid.',CR,LF,0
 INV_C   DC.B    CR,LF,'ERROR: Invalid character. Values 0~9 or A~F only.',CR,LF
         DC.B    'Make sure you are using capital letters. This program does not allow deleting.',CR,LF,0
-CONT    DC.B    CR,LF,'Press any key to Continue',0   
+CONT    DC.B    CR,LF,'Press ENTER to Continue',0   
 ENDING  DC.B    'End Memory Address reached. Now returning to the main screen.',CR,LF,0
+COLON   DC.B    ': ',0
 
 INPUT   DS.B    16          ;Used for the conversion in GETHEX
 TEXT    DS.B    16          ;Used for the conversion in hexToASCII subroutine
@@ -2677,7 +2693,11 @@ strByte         DC.B    '.B ',0
 strWord         DC.B    '.W ',0
 strLong         DC.B    '.L ',0
 
+DECOM_E DC.B    1
+
         END     START
+
+
 
 *~Font name~Courier New~
 *~Font size~10~
