@@ -473,82 +473,70 @@ grpTen
 *-----------------------------------------------------------
 * Subroutine     : grpEleven
 * Written by     : Jeff Graham
-* Last Modified  : 2/14/14
+* Last Modified  : 3/11/14
 * Description    : sorts group eleven opcodes according to their second 4-bits
 * Purpose        : The second step in decoding an opcode
 * Inputs         : None (depends on the opcode pointer being A3)
 * Outputs        : None (branches to next SR in line)
 *-----------------------------------------------------------
 grpEleven
-        MOVE.B      #2,D6       *check 2nd 4bit value
-        BSR         fourBitValue
+        *get opmode 3 bit field
+        BFEXTU      D2{#23:#3},D7
         
-        *compare 4-bit data to determine opcode
-        *if odd -> EOR, else -> either CMP or CMPA
-        ANDI.B      #1,D7
-        CMPI.B      #1,D7
-        BEQ         opEOR       *if odd
-        BRA         chkCMPCMPA  *if even
-        
-*-----------------------------------------------------------
-* Subroutine     : chkCMPCMPA
-* Written by     : Jeff Graham
-* Last Modified  : 2/14/14
-* Description    : Determines if the opcode is CMP or CMPA
-* Purpose        : checks ambiguous opcodes next bits to determine which code
-*                   it is.
-* Inputs         : None (depends on the opcode pointer being A3)
-* Outputs        : None (branches to next SR in line)
-*-----------------------------------------------------------
-chkCMPCMPA
-        MOVE.B      #1,D6       *Note: for this, we must check the third 4bit set
-        BSR         fourBitValue
-        
-        *compare 4-bit data to determine opcode
-        *if >= 12 -> CMPA, else -> CMPA
-        CMPI.B      #12,D7
-        BGE         opCMPA
-        BRA         opCMP
-
+        *compare opmode field to determine opcode
+        *If 3, or 7 CMPA
+        CMPI.B      #7,D7
+        BEQ         opCMPA
+        CMPI.B      #3,D7
+        BEQ         opCMPA
+        *if 4,5, or 6 -> EOR
+        BGT         opEOR
+        *if 0,1,2 -> CMP 
+        BLT         opCMP
+       
 *-----------------------------------------------------------
 * Subroutine     : grpTwelve
 * Written by     : Jeff Graham
-* Last Modified  : 2/14/14
+* Last Modified  : 3/11/14
 * Description    : sorts group twelve opcodes according to their second 4-bits
 * Purpose        : The second step in decoding an opcode
 * Inputs         : None (depends on the opcode pointer being A3)
 * Outputs        : None (branches to next SR in line)
 *-----------------------------------------------------------
 grpTwelve
-        MOVE.B      #2,D6       *check 2nd 4bit value
-        BSR         fourBitValue
+        *get opmode 3 bit field
+        BFEXTU      D2{#23:#3},D7
         
-        *compare 4-bit data to determine opcode
-        *if odd -> MULS.W, else -> AND
-        ANDI.B      #1,D7
-        CMPI.B      #1,D7
-        BEQ         opMULSW     *if odd
-        BRA         opAND       *if even
+        *compare opmode field to determine opcode
+        *If 7 CMPA
+        CMPI.B      #7,D7
+        BEQ         opMULSW
+        *if 3, unknown
+        CMPI.B      #3,D7
+        BEQ         unknownOp
+        *else AND
+        BRA         opAND
 
 
 
 *-----------------------------------------------------------
 * Subroutine     : grpThirteen
 * Written by     : Jeff Graham
-* Last Modified  : 2/14/14
+* Last Modified  : 3/11/14
 * Description    : sorts group thirteen opcodes according to their second 4-bits
 * Purpose        : The second step in decoding an opcode
 * Inputs         : None (depends on the opcode pointer being A3)
 * Outputs        : None (branches to next SR in line)
 *-----------------------------------------------------------
 grpThirteen
-        MOVE.B      #1,D6       *Note: for this, we must check the third 4bit set
-        BSR         fourBitValue
+        *get 2 bit field
+        BFEXTU      D2{#24:#2},D7
         
-        *compare 4-bit data to determine opcode
-        *if >= 12 -> ADDA, else -> ADD
-        CMPI.B      #12,D7
-        BGE         opADDA
+        *compare opmode field to determine opcode
+        *if 3, ADDA
+        CMPI.B      #3,D7
+        BEQ         opADDA
+        *else ADD
         BRA         opADD
 
 
@@ -604,7 +592,7 @@ grpFifteen
 *-----------------------------------------------------------
 * Subroutine     : opADDI
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the ADDI opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -715,7 +703,7 @@ opADDIEnd
 *-----------------------------------------------------------
 * Subroutine     : opANDI
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the ANDI opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -826,7 +814,7 @@ opANDIEnd
 *-----------------------------------------------------------
 * Subroutine     : opEORI
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the EORI opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -937,7 +925,7 @@ opEORIEnd
 *-----------------------------------------------------------
 * Subroutine     : opBCHGStat
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the BCHG opcode with a static source operand
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -984,7 +972,7 @@ opBCHGStat
 *-----------------------------------------------------------
 * Subroutine     : opBCHGDyn
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the BCHG opcode with a Dynamic source operand
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1024,7 +1012,7 @@ opBCHGDyn
 *-----------------------------------------------------------
 * Subroutine     : opCMPI
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the CMPI opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1259,7 +1247,7 @@ opMOVEW
 *-----------------------------------------------------------
 * Subroutine     : opMOVEMMtoR
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the MOVEM opcode for memory to register moves
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1314,7 +1302,7 @@ opMOVEMMtoREnd
 *-----------------------------------------------------------
 * Subroutine     : opMOVEM
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the MOVEM opcode for register to memory moves
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1473,7 +1461,7 @@ opJSR
 *-----------------------------------------------------------
 * Subroutine     : opRTS
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the RTS opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1493,7 +1481,7 @@ opRTS
 *-----------------------------------------------------------
 * Subroutine     : opMULSL
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the MULS opcode with size of longword
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1561,7 +1549,7 @@ opMULSLSingle
 *-----------------------------------------------------------
 * Subroutine     : opSUBQ
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the SUBQ opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1635,7 +1623,7 @@ opSUBQImmediate
 *-----------------------------------------------------------
 * Subroutine     : opBCC
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the BCC opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1748,7 +1736,7 @@ opBVS
 *-----------------------------------------------------------
 * Subroutine     : opMOVEQ
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the MOVEQ opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1805,7 +1793,7 @@ opDIVU
 *-----------------------------------------------------------
 * Subroutine     : opSUB
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the SUB opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1858,7 +1846,7 @@ opSUBDir
         MOVE.B  D7,(A2)+
         
         *buffer ,
-        MOVE.B  #36,(A2)+
+        MOVE.B  #44,(A2)+
         
         *Get destination EA
         MOVE.B  #0,D5       *store register
@@ -1875,7 +1863,7 @@ opSUBDir
         
 opSubEa
         *ea source
-        *Get destination EA
+        *Get source EA
         MOVE.B  #0,D5       *store register
         MOVE.B  #3,D6       *store mode
         
@@ -1907,69 +1895,260 @@ opSUBEnd
 *-----------------------------------------------------------
 * Subroutine     : opSUBA
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the SUBA opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opSUBA
         *Print opcode
-        LEA     strSUBA,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strSUBA,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BTST    #8,D2   
+        BEQ     opSUBAWord
+        *else longword
+        BRA     opSUBALong        
+        
+
+opSUBAWord
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opSUBAEa
+opSUBALong
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opSUBAEa
+      
+opSubAEa
+        *ea source
+        *Get source EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *no invalid EAs
+        
+        *decode EA
+        BSR     eaDecode
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer A
+        MOVE.B  #65,(A2)+
+        
+        *get address register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *terminate buffer with null
+        MOVE.B  #0,(A2)+
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *group 11 opcodes
 *-----------------------------------------------------------
 * Subroutine     : opEOR
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the EOR opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opEOR
         *Print opcode
-        LEA     strEOR,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strEOR,A6
+        BSR     toOutputBuffer
         
+        *test oepration size
+        BFEXTU  D2{#24:#2},D4
+        CMPI.B  #1,D4
+        BLT     opEORB
+        BEQ     opEORW
+        *else long or invalid
+        CMPI.B  #2,D4
+        BEQ     opEORL
+        BRA     unknownOp   *if 11, then unknown
+        
+opEORB  
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opEOREnd
+opEORW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opEOREnd
+opEORL
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opEOREnd
+        
+opEOREnd
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get data register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        
+        *buffer data reg #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *destination EA
+        *set invalid EA mask
+        BSET    #30,D2
+        BSET    #24,D2
+        
+        *Get dest EA bits
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *decode ea
+        BSR     eaDecode
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *-----------------------------------------------------------
 * Subroutine     : opCMP
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the CMP opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opCMP
-        *Print opcode
-        LEA     strCMP,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        *buffer opcode
+        LEA     strCMP,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BFEXTU  D2{#24:#2},D4
+        CMPI.B  #1,D4
+        BLT     opCMPB
+        BEQ     opCMPW
+        BGT     opCMPL  *grpEleven verified != 3
+        
+opCMPB
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opCMPEnd
+opCMPW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opCMPEnd
+opCMPL
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opCMPEnd
+
+opCMPEnd
+        *get EA
+        *no invalid EA's
+        *Get source EA bits
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+
+        *decode ea
+        BSR     eaDecode
+        
+        *get destination register
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get register #
+        BFEXTU  D2{#20:#3},D7
+        
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer null
+        MOVE.B  #0,(A2)
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *-----------------------------------------------------------
 * Subroutine     : opCMPA
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the CMPA opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opCMPA
         *Print opcode
-        LEA     strCMPA,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strCMPA,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BTST    #8,D2
+        BEQ     opCMPW
+        BRA     opCMPL
+
+opCMPAW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opCMPAEnd
+opCMPAL
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opCMPAEnd
+
+opCMPAEnd
+        *get EA
+        *no invalid EA's
+        *Get source EA bits
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+
+        *decode ea
+        BSR     eaDecode
+        
+        *get destination register
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get register #
+        BFEXTU  D2{#20:#3},D7
+        
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer null
+        MOVE.B  #0,(A2)
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *group 12 opcodes
 *-----------------------------------------------------------
 * Subroutine     : opMULSW
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the MULS opcode with a size of word
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -2012,48 +2191,260 @@ opMULSW
 *-----------------------------------------------------------
 * Subroutine     : opAND
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the AND opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opAND
         *Print opcode
-        LEA     strAND,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strAND,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BFEXTU  D2{#24:#2},D4
+        CMPI.B  #1,D4
+        BLT     opANDByte
+        BEQ     opANDWord
+        BRA     opANDLong   *grpTwelve verified != 3
+        
+opANDByte
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opANDDir
+opANDWord
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opANDDir
+opANDLong
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opANDDir
+
+opANDDir
+        *check direction
+        BTST    #8,D2
+        BEQ     opANDEa     *ea source
+        
+        *else data register source
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get data register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *Get destination EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *invalid ea mask
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #24,D2
+        
+        *decode EA
+        BSR     eaDecode
+        BRA     opANDEnd
+        
+opANDEa
+        *ea source
+        *Get source EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *set invalid EAs
+        BSET    #30,D2
+        
+        *decode EA
+        BSR     eaDecode
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get data register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *terminate buffer with null
+        MOVE.B  #0,(A2)+
+        
+opANDEnd
+        BSR     printBuffer
         BRA     nextOp
         
 *group 13 opcodes
 *-----------------------------------------------------------
 * Subroutine     : opADD
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the ADD opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opADD
         *Print opcode
-        LEA     strADD,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strADD,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BFEXTU  D2{#24:#2},D4
+        CMPI.B  #1,D4
+        BLT     opADDByte
+        BEQ     opADDWord
+        BRA     opADDLong   *grpThirteen verified != 3
+        
+opADDByte
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opADDDir
+opADDWord
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opADDDir
+opADDLong
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opADDDir
+
+opADDDir
+        *check direction
+        BTST    #8,D2
+        BEQ     opADDEa     *ea source
+        
+        *else data register source
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get data register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *Get destination EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *invalid ea mask
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #24,D2
+        
+        *decode EA
+        BSR     eaDecode
+        BRA     opADDEnd
+        
+opADDEa
+        *ea source
+        *Get source EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *no invalid EAs
+        
+        *decode EA
+        BSR     eaDecode
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get data register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *terminate buffer with null
+        MOVE.B  #0,(A2)+
+        
+opADDEnd
+        BSR     printBuffer
         BRA     nextOp
+
 
 *-----------------------------------------------------------
 * Subroutine     : opADDA
 * Written by     : Jeff Graham
-* Last Modified  : 3/10/14
+* Last Modified  : 3/11/14
 * Description    : Decodes the ADDA opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opADDA
         *Print opcode
-        LEA     strADDA,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strADDA,A6
+        BSR     toOutputBuffer
         
+        *get size
+        BTST    #8,D2
+        BEQ     opADDAWord
+        BRA     opADDALong        
+opADDAWord
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opADDAEnd
+opADDALong
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opADDAEnd
+
+        
+opADDAEnd
+        *ea source
+        *Get source EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *no invalid EAs
+        
+        *decode EA
+        BSR     eaDecode
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer A
+        MOVE.B  #65,(A2)+
+        
+        *get address register #
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        *buffer register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *terminate buffer with null
+        MOVE.B  #0,(A2)+
+        
+        BSR     printBuffer
         BRA     nextOp
+
         
 *group 14 opcodes
 *-----------------------------------------------------------
@@ -2065,10 +2456,111 @@ opADDA
 *-----------------------------------------------------------
 opASd
         *Print opcode
-        LEA     strASd,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strASd,A6
+        BSR     toOutputBuffer
+
+        *check direction
+        BTST    #8,D2
+        BEQ     opASR   *if 0, ASR
+        BRA     opASL   *else ASL
+opASR
+        *buffer R
+        MOVE.B  #82,(A2)+
+        BRA     opASdSize
+opASL
+        *buffer L
+        MOVE.B  #76,(A2)+
+        BRA     opASdSize
         
+opASdSize
+        *check size/mem shift
+        BFEXTU  D2{#24:#2},D4
+        CMPI.B  #3,D4
+        BEQ     opASdMem    *memory shift mode
+        *else check size
+        CMPI.B  #1,D4
+        BLT     opASdB      *if 0, then byte size
+        BEQ     opASdW      *1 -> word
+        BGT     opASdL      *2 -> longword
+        
+opASdMem
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opASdEnd
+        
+        *ea source/dest
+        *Get EA
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+        
+        *set invalid EAs
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #24,D2
+        
+        *decode EA
+        BSR     eaDecode
+        BRA     opASdEnd
+        
+opASdB
+        *buffer .B
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+        BRA     opASdIR
+opASdW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     opASdIR
+opASdL
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     opASdIR
+        
+opASdIR
+        *check i/r bit
+        BTST    #5,D2
+        BEQ     opASdImmediate  *if 0, immediate data
+        BRA     opASdRegister   *if 1, register number
+        
+opASdImmediate
+        *Buffer #
+        MOVE.B  #35,(A2)+
+        
+        BRA     opASdDest
+opASdRegister
+        *buffer D
+        MOVE.B  #68,(A2)+
+        BRA     opASdDest
+        
+opASdDest
+        *get data/register number
+        BFEXTU  D2{#20:#3},D7
+        *Buffer immediate data/register number
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get dest register #
+        BFEXTU  D2{#29:#3},D7
+        *buffer dest register #
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *add null to buffer
+        MOVE.B  #0,(A2)
+        
+        
+opASdEnd
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *-----------------------------------------------------------
@@ -2670,7 +3162,7 @@ strMULSW        DC.B    'MULS.W ',0
 strAND          DC.B    'AND',0
 strADD          DC.B    'ADD',0
 strADDA         DC.B    'ADDA',0
-strASd          DC.B    'ASd',0
+strASd          DC.B    'AS',0
 strLSd          DC.B    'LSd',0
 strROd          DC.B    'ROd',0
 strByte         DC.B    '.B ',0
