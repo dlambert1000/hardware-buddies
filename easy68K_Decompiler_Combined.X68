@@ -637,6 +637,9 @@ opADDIB
         LEA     strByte,A6
         BSR     toOutputBuffer
         
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
         *move $ to output buffer
@@ -660,6 +663,9 @@ opADDIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -683,6 +689,9 @@ opADDIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -747,6 +756,8 @@ opANDIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -771,6 +782,8 @@ opANDIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -794,6 +807,8 @@ opANDIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -858,6 +873,8 @@ opEORIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -882,6 +899,8 @@ opEORIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -905,6 +924,8 @@ opEORIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1056,6 +1077,8 @@ opCMPIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1080,6 +1103,8 @@ opCMPIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1103,6 +1128,8 @@ opCMPIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1439,7 +1466,9 @@ opCLRL
 
 opCLREnd
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *decode EA
         MOVE.B  #0,D5       *store register
@@ -1616,6 +1645,9 @@ opSUBQL
         BRA     opSUBQEnd
 
 opSUBQEnd
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         *get immediate data
         MOVE.B  #9,D6       *data bit offset
         BSR     threeBitValue
@@ -1865,6 +1897,11 @@ opSUBLong
         BRA     opSUBDir
 
 opSUBDir
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+        *buffer SPACE
+        MOVE.B  #32,(A2)+
+        
         *check direction
         BTST    #8,D2
         BEQ     opSubEa     *ea source
@@ -1897,9 +1934,6 @@ opSUBDir
         BRA     opSUBEnd
         
 opSUBEa
-        *buffer SPACE
-        MOVE.B  #20,(A2)+
-
         *ea source
         *Get source EA
         MOVE.B  #0,D5       *store register
@@ -1961,6 +1995,9 @@ opSUBALong
         BRA     opSUBAEa
       
 opSUBAEa
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         *ea source
         *Get source EA
         MOVE.B  #0,D5       *store register
@@ -2031,7 +2068,9 @@ opEORL
         
 opEOREnd
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *buffer D
         MOVE.B  #68,(A2)+
@@ -2099,7 +2138,9 @@ opCMPL
 
 opCMPEnd
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *get EA
         *no invalid EA's
@@ -2144,8 +2185,8 @@ opCMPA
         
         *get size
         BTST    #8,D2
-        BEQ     opCMPW
-        BRA     opCMPL
+        BEQ     opCMPAW
+        BRA     opCMPAL
 
 opCMPAW
         *buffer .W
@@ -2159,6 +2200,9 @@ opCMPAL
         BRA     opCMPAEnd
 
 opCMPAEnd
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         *get EA
         *no invalid EA's
         *Get source EA bits
@@ -2269,7 +2313,10 @@ opANDLong
 
 opANDDir
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *check direction
         BTST    #8,D2
@@ -2372,9 +2419,9 @@ opADDLong
 
 opADDDir
         *buffer SPACE
-        MOVE.B  #20,(A2)+
-        *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
 
         *check direction
@@ -2469,6 +2516,9 @@ opADDALong
 
         
 opADDAEnd
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+        
         *ea source
         *Get source EA
         MOVE.B  #0,D5       *store register
@@ -2542,7 +2592,10 @@ opASdMem
         BSR     toOutputBuffer
         
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *ea source/dest
         *Get EA
@@ -2576,7 +2629,10 @@ opASdL
         
 opASdIR
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *get data/register number
         BFEXTU  D2{#20:#3},D7
@@ -2670,7 +2726,10 @@ opLSdMem
         BSR     toOutputBuffer
         
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *ea source/dest
         *Get EA
@@ -2704,7 +2763,10 @@ opLSdL
         
 opLSdIR
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *get data/register number
         BFEXTU  D2{#20:#3},D7
@@ -2800,7 +2862,10 @@ opROdMem
         BSR     toOutputBuffer
         
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
 
         *ea source/dest
         *Get EA
@@ -2834,7 +2899,10 @@ opROdL
         
 opROdIR
         *buffer SPACE
-        MOVE.B  #20,(A2)+
+        MOVE.B  #32,(A2)+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         
         *get data/register number
         BFEXTU  D2{#20:#3},D7
@@ -3477,13 +3545,14 @@ strADDA         DC.B    'ADDA',0
 strASd          DC.B    'AS',0
 strLSd          DC.B    'LS',0
 strROd          DC.B    'RO',0
-strByte         DC.B    '.B ',TAB,0
-strWord         DC.B    '.W ',TAB,0
-strLong         DC.B    '.L ',TAB,0
+strByte         DC.B    '.B ',0
+strWord         DC.B    '.W ',0
+strLong         DC.B    '.L ',0
 
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
