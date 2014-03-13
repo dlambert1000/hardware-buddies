@@ -1512,7 +1512,7 @@ RtoMPDAddReg
 RtoMPrint
         *Remove last / and buffer ,
         MOVE.B  #44,-(A2)
-        ADDA.L  #1,A2       *increment A2
+        ADDA.L  #1,A2       *increment A2 one byte
 
         *ea decode
         *set invalid EA mask
@@ -1690,6 +1690,9 @@ opMULSL
         *buffer opcode
         LEA     strMULSL,A6
         BSR     toOutputBuffer
+        
+        *store size
+        MOVE.W  #2,D4
         
         *Store extra word instruction
         MOVEA   A3,A0
@@ -1900,7 +1903,8 @@ opBxx
         
         *else 8 bit displacement
         *convert to ascii
-        MOVE.B  D2,D1
+        MOVE.B  D2,D1        
+        
         MOVE.B  #2,D4
         BSR     hexToAscii
         *buffer ascii
@@ -1911,8 +1915,8 @@ opBxx
         
 opBxxWord
         *read next word
-        *convert to ascii
         MOVE.W  (A3),D1
+        *convert to ascii
         MOVE.B  #4,D4
         BSR     hexToAscii
         *buffer ascii
@@ -1927,8 +1931,8 @@ opBxxWord
         
 opBxxLong
         *read next longword
-        *convert to ascii
         MOVE.L  (A3),D1
+        *convert to ascii
         MOVE.B  #8,D4
         BSR     hexToAscii
         *buffer ascii
@@ -1982,8 +1986,11 @@ opMOVEQ
         BSR     threeBitValue
         
         *buffer data register number
-        LEA     OUTPUT,A6
-        BSR     toOutputBuffer
+        ADD.B   #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer null
+        MOVE.B  #0,(A2)
         
         BSR     printBuffer
         BRA     nextOp
@@ -2017,7 +2024,7 @@ opSUB
         LEA     strSUB,A6
         BSR     toOutputBuffer
         
-        *get size
+        *get size and store
         BFEXTU  D2{#24:#2},D4
         CMPI.B  #1,D4
         BLT     opSUBByte
@@ -2135,11 +2142,15 @@ opSUBAWord
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *store op size
+        MOVE.B  #1,D4
         BRA     opSUBAEa
 opSUBALong
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *store op size
+        MOVE.B  #2,D4
         BRA     opSUBAEa
       
 opSUBAEa
@@ -2340,11 +2351,15 @@ opCMPAW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *store size
+        MOVE.B  #1,D4
         BRA     opCMPAEnd
 opCMPAL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *store size
+        MOVE.B  #2,D4
         BRA     opCMPAEnd
 
 opCMPAEnd
@@ -2364,8 +2379,8 @@ opCMPAEnd
         *buffer ,
         MOVE.B  #44,(A2)+
         
-        *buffer D
-        MOVE.B  #68,(A2)+
+        *buffer A
+        MOVE.B  #65,(A2)+
         
         *get register #
         BFEXTU  D2{#20:#3},D7
@@ -2392,6 +2407,9 @@ opMULSW
         *buffer opcode
         LEA     strMULSW,A6
         BSR     toOutputBuffer
+        
+        *store size
+        MOVE.W  #1,D4
         
         *source EA
         MOVE.B  #0,D5       *store register
@@ -2655,11 +2673,15 @@ opADDAWord
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
+        *store size
+        MOVE.B  #1,D4
         BRA     opADDAEnd
 opADDALong
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
+        *store size
+        MOVE.B  #2,D4
         BRA     opADDAEnd
 
         
@@ -3145,7 +3167,7 @@ clrLoop CMPA.L  A6,A2
 CheckEnd
         *check for end of data
         CMP.L   A4,A3
-        BGE     ENDLOOP     *Clear output and prompt user to loop
+        BGT     ENDLOOP     *Clear output and prompt user to loop
         
         BRA     decodeOp    *if not end decode next op
         
