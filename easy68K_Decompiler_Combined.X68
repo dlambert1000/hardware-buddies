@@ -109,7 +109,9 @@ STORE   MOVE.B  D1,(A1)+    ;Stores the converted value into INPUT
         ADD     #1,D2       ;Increments to count the number of characters
         BRA     READHEX     ;Jump back to the READHEX loop
         
-HEXFIN  CLR     D5          ;D5 holds the final value
+HEXFIN  CMP     #0,D2       ;If no characters have been entered, throw an error
+        BEQ     INVALID     ;+
+        CLR     D5          ;D5 holds the final value
         MOVE.L  #16,D4      ;D4 is used to multiply by a power of 16
         MOVE.B  -(A1),D5    ;Get the least significant byte
 GETNEXT SUB.B   #1,D2       ;Decrement the counter in D2 as we read in the next value
@@ -3700,6 +3702,7 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
