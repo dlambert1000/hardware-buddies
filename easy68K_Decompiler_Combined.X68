@@ -1294,7 +1294,7 @@ opMOVEW
 *-----------------------------------------------------------
 * Subroutine     : opMOVEMMtoR
 * Written by     : Jeff Graham
-* Last Modified  : 3/11/14
+* Last Modified  : 3/13/14
 * Description    : Decodes the MOVEM opcode for memory to register moves
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
@@ -1304,22 +1304,32 @@ opMOVEMMtoR
         BSR     toOutputBuffer
         
         *Get size
-        BTST    #10,D2
-        BNE     opMOVEMMtoRL
-        BEQ     opMOVEMMtoRW
+        BTST    #6,D2
+        BNE     MtoRL
+        BEQ     MtoRW
         
-opMOVEMMtoRW
+MtoRW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
-        BRA     opMOVEMMtoREnd
-opMOVEMMtoRL
+        BRA     MtoREnd
+MtoRL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
-        BRA     opMOVEMMtoREnd
+        BRA     MtoREnd
 
-opMOVEMMtoREnd
+MtoREnd
+        *buffer Spaces x4
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        
+        *before EA, store reg list address and inc A3
+        MOVE.W  (A3),D0       *store reg list
+        ADDA.L  #2,A3       *increment data pointer for EA
+        
         *ea decode
         *set invalid EA mask
         BSET    #31,D2
@@ -1330,20 +1340,50 @@ opMOVEMMtoREnd
         MOVE.B  #3,D6       *store mode
         MOVE.B  #0,D5       *store register
         BSR     eaDecode    *decode EA
+        
+        *buffer ,
+        MOVE.B  #44,(A2)+
 
         *register list
+        MOVE.B  #16,D5  *init loop counter
+MtoRAddReg
         *An list
-        MOVE.B  #65,D6      *store A
-        MOVE.B  #8,D5
-        BSR     opMOVEMList
-        ADDA.L  #1,A3       *increment one byte
+        CMPI.B  #8,D5           *compare to 8, for next loop
+        BEQ     MtoRDatReg      *break loop
+        SUBQ.B  #1,D5           *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     MtoRAddReg      *loop & don't buffer
+        *else buffer register
+        MOVE.B  #65,(A2)+       *buffer A
+        *buffer reg #
+        MOVE.B  #40,D7          *40 = 48 (number to ascii offset) - 8 (bit offset in word)
+        ADD.B   D5,D7
+        MOVE.B  D7,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     MtoRAddReg      *loop after buffer
         
-        *Dn list
-        MOVE.B  #68,D6      *store D
-        MOVE.B  #8,D5
-        BSR     opMOVEMList
-        ADDA.L  #1,A3       *increment one byte
+                
+MtoRDatReg
+        *An list
+        CMPI.B  #0,D5       *compare to 0 to leave loop
+        BLE     MtoRPrint   *break loop
+        SUBQ.B  #1,D5   *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     MtoRDatReg      *loop without buffer
+        *else buffer register
+        MOVE.B  #68,(A2)+       *buffer D
+        *buffer reg #
+        MOVE.B  #48,D7
+        ADD.B   D5,D7
+        MOVE.B  D7,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     MtoRDatReg      *loop after buffer
         
+MtoRPrint        
+        *remove last - from buffer and add null
+        MOVE.B  #0,-(A2)
+        
+        BSR     printBuffer
         BRA     nextOp
         
 *-----------------------------------------------------------
@@ -1354,34 +1394,93 @@ opMOVEMMtoREnd
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
 opMOVEMRtoM
-        *Print opcode
-        LEA     strMOVEM,A1
-        MOVE.W  #13,D0
-        TRAP    #15
-                
-        BRA     nextOp
+        *buffer opcode
+        LEA     strMOVEM,A6
+        BSR     toOutputBuffer
         
-opMOVEMList
-        *D5 = register #
-        *D6 = A or D
-        CMPI.B  #0,D5           *check for end of loop
-        BEQ     opMOVEMListRet
-        SUBQ    #1,D5
-        BTST.B  D5,(A3)         *check bit
-        BEQ     opMOVEMList     *loop
-        *bit is set -> buffer register
-        MOVE.B  D6,(A2)+    *buffer register type
-        MOVE.B  D5,(A2)+    *buffer register number
-        MOVE.B  #35,(A2)+   *buffer ,
+        *Get size
+        BTST    #6,D2
+        BNE     RtoML
+        BEQ     RtoMW
         
-        BRA     opMOVEMList *Loop
-        
-        
-opMOVEMListPD
-        
+RtoMW
+        *buffer .W
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+        BRA     RtoMEnd
+RtoML
+        *buffer .L
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+        BRA     RtoMEnd
 
-opMOVEMListRet
-        RTS
+RtoMEnd
+        *buffer Spaces x4
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        
+        *store reg list address and inc A3
+        MOVE.W  (A3),D0     *store reg list
+        ADDA.L  #2,A3       *increment data pointer for EA
+
+        *register list
+        MOVE.B  #16,D5  *init loop counter
+RtoMAddReg
+        *An list
+        CMPI.B  #8,D5           *compare to 8, for next loop
+        BEQ     RtoMDatReg      *break loop
+        SUBQ.B  #1,D5           *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     RtoMAddReg      *loop & don't buffer
+        *else buffer register
+        MOVE.B  #65,(A2)+       *buffer A
+        *buffer reg #
+        MOVE.B  #40,D7          *40 = 48 (number to ascii offset) - 8 (bit offset in word)
+        ADD.B   D5,D7
+        MOVE.B  D7,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     RtoMAddReg      *loop after buffer
+        
+                
+RtoMDatReg
+        *An list
+        CMPI.B  #0,D5       *compare to 0 to leave loop
+        BLE     RtoMPrint   *break loop
+        SUBQ.B  #1,D5   *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     RtoMDatReg      *loop without buffer
+        *else buffer register
+        MOVE.B  #68,(A2)+       *buffer D
+        *buffer reg #
+        MOVE.B  #48,D7
+        ADD.B   D5,D7
+        MOVE.B  D7,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     RtoMDatReg      *loop after buffer
+        
+RtoMPrint
+        *Remove last / and buffer ,
+        MOVE.B  #44,-(A2)
+        ADDA.L  #1,A2       *increment A2
+
+        *ea decode
+        *set invalid EA mask
+        BSET    #31,D2
+        BSET    #30,D2
+        BSET    #28,D2
+        BSET    #24,D2
+
+        MOVE.B  #3,D6       *store mode
+        MOVE.B  #0,D5       *store register
+        BSR     eaDecode    *decode EA
+        
+        
+        BSR     printBuffer
+        BRA     nextOp
+
+        
         
 *-----------------------------------------------------------
 * Subroutine     : opLEA
@@ -3509,7 +3608,7 @@ TEXT    DS.B    16          ;Used for the conversion in hexToASCII subroutine
 OUTPUT  DS.B    16          ;The completed string for hexToASCII subroutine
 
 strUnknownOp    DC.B    'Unknown Op: ',0
-opBuffer        DS.B    64  *longest possible opcode is ~60 characters
+opBuffer        DS.B    70  *longest possible opcode is ~66 characters
 
 *opcode strings
 strADDI         DC.B    'ADDI',0
@@ -3552,6 +3651,8 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
+
 
 
 
