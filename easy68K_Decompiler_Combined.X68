@@ -1364,7 +1364,7 @@ MtoRAddReg
         
                 
 MtoRDatReg
-        *An list
+        *Dn list
         CMPI.B  #0,D5       *compare to 0 to leave loop
         BLE     MtoRPrint   *break loop
         SUBQ.B  #1,D5   *decrement loop counter
@@ -1380,7 +1380,7 @@ MtoRDatReg
         BRA     MtoRDatReg      *loop after buffer
         
 MtoRPrint        
-        *remove last - from buffer and add null
+        *remove last / from buffer and add null
         MOVE.B  #0,-(A2)
         
         BSR     printBuffer
@@ -1424,9 +1424,16 @@ RtoMEnd
         *store reg list address and inc A3
         MOVE.W  (A3),D0     *store reg list
         ADDA.L  #2,A3       *increment data pointer for EA
-
+        
         *register list
-        MOVE.B  #16,D5  *init loop counter
+        MOVE.B  #16,D5      *init loop counter
+        
+        *check for post-decrement -(An) ea mode
+        BFEXTU  D2{#26:#3},D7
+        CMPI.B  #4,D7
+        BEQ     RtoMPDDATReg
+        
+        
 RtoMAddReg
         *An list
         CMPI.B  #8,D5           *compare to 8, for next loop
@@ -1445,10 +1452,10 @@ RtoMAddReg
         
                 
 RtoMDatReg
-        *An list
-        CMPI.B  #0,D5       *compare to 0 to leave loop
-        BLE     RtoMPrint   *break loop
-        SUBQ.B  #1,D5   *decrement loop counter
+        *Dn list
+        CMPI.B  #0,D5           *compare to 0 to leave loop
+        BLE     RtoMPrint       *break loop
+        SUBQ.B  #1,D5           *decrement loop counter
         BTST.L  D5,D0
         BEQ     RtoMDatReg      *loop without buffer
         *else buffer register
@@ -1459,6 +1466,48 @@ RtoMDatReg
         MOVE.B  D7,(A2)+
         MOVE.B  #47,(A2)+       *buffer /
         BRA     RtoMDatReg      *loop after buffer
+        
+                
+                
+RtoMPDDatReg
+        MOVE.L  #15,D6          *reset modulus
+        *Dn list reversed for -(An)
+        CMPI.B  #8,D5           *compare to 8, for next loop
+        BEQ     RtoMPDAddReg    *break loop
+        SUBQ.B  #1,D5           *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     RtoMPDDatReg    *loop & don't buffer
+        *else buffer register
+        MOVE.B  #68,(A2)+       *buffer D
+        *buffer reg #
+        MOVE.W  D5,D7           *store loop counter for modulus operation
+        DIVU.W  D7,D6           *divide to get modulus 15
+        SWAP    D6              *move modulus into place
+        ADDI.B  #48,D6          *48 is number to ascii offset
+        MOVE.B  D6,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     RtoMPDDatReg      *loop after buffer
+        
+                
+RtoMPDAddReg
+        MOVE.L  #7,D6           *reset modulus op
+        *An list reversed for -(An)
+        CMPI.B  #0,D5           *compare to 0 to leave loop
+        BLE     RtoMPrint       *break loop
+        SUBQ.B  #1,D5           *decrement loop counter
+        BTST.L  D5,D0
+        BEQ     RtoMPDAddReg    *loop without buffer
+        *else buffer register
+        MOVE.B  #65,(A2)+       *buffer A
+        *buffer reg #
+        MOVE.W  D5,D7           *store loop counter for modulus operation
+        DIVU.W  D7,D6           *divide to get modulus 7
+        SWAP    D6              *move modulus into place
+        ADDI.B  #48,D6          *48 is number to ascii offset
+        MOVE.B  D6,(A2)+
+        MOVE.B  #47,(A2)+       *buffer /
+        BRA     RtoMPDAddReg    *loop after buffer
+
         
 RtoMPrint
         *Remove last / and buffer ,
