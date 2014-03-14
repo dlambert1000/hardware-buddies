@@ -2028,6 +2028,9 @@ opDIVUW
         LEA     strWord,A6
         BSR     toOutputBuffer
 
+        *store size
+        MOVE.B  #1,D4
+
         *Validate bits
         MOVE.B  #6,D6
         BSR     threeBitValue
@@ -3776,6 +3779,7 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
