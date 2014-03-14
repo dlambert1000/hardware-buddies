@@ -447,7 +447,7 @@ grpSeven
 * Outputs        : None (branches to next SR in line)
 *-----------------------------------------------------------
 grpEight
-        BRA         opDIVU
+        BRA         opDIVUW
 
 *-----------------------------------------------------------
 * Subroutine     : grpNine
@@ -2013,18 +2013,57 @@ opMOVEQ
 
 *group 8 opcodes
 *-----------------------------------------------------------
-* Subroutine     : opDIVU
+* Subroutine     : opDIVUW
 * Written by     : Jeff Graham
 * Last Modified  : 3/10/14
-* Description    : Decodes the DIVU opcode
+* Description    : Decodes the DIVU.W opcode
 * Purpose        : The final step in decoding opcode
 *-----------------------------------------------------------
-opDIVU
+opDIVUW
         *Print opcode
-        LEA     strDIVU,A1
-        MOVE.W  #13,D0
-        TRAP    #15
+        LEA     strDIVU,A6
+        BSR     toOutputBuffer
         
+        *buffer size
+        LEA     strWord,A6
+        BSR     toOutputBuffer
+
+        *Validate bits
+        MOVE.B  #6,D6
+        BSR     threeBitValue
+        CMPI.B  #3,D7
+        BNE     unknownOp
+        
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+        
+        *get source EA
+        *set ea mode and register
+        MOVE.B  #0,D5       *store register
+        MOVE.B  #3,D6       *store mode
+  
+        *set invalid ea mask
+        BSET    #30,D2
+        
+        BSR     eaDecode
+        
+        *destination register
+        *buffer ,
+        MOVE.B  #44,(A2)+
+        
+        *Buffer D
+        MOVE.B  #68,(A2)+
+        
+        *get register number
+        MOVE.B  #9,D6
+        BSR     threeBitValue
+        ADDI.B  #48,D7
+        MOVE.B  D7,(A2)+
+        
+        *buffer null
+        MOVE.B  #0,(A2)
+        
+        BSR     printBuffer        
         BRA     nextOp
         
 *group 9 opcodes
