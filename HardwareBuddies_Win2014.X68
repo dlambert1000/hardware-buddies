@@ -3703,7 +3703,7 @@ strBCC          DC.B    'BCC    ',TAB,0
 strBGT          DC.B    'BGT    ',TAB,0
 strBLE          DC.B    'BLE    ',TAB,0
 strBVS          DC.B    'BVS    ',TAB,0
-strMOVEQ        DC.B    'MOVEQ  ',TAB,0
+strMOVEQ        DC.B    'MOVEQ.L',TAB,0
 strDIVU         DC.B    'DIVU',0
 strSUB          DC.B    'SUB',0
 strSUBA         DC.B    'SUBA',0
@@ -3724,6 +3724,7 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
