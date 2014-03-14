@@ -603,7 +603,7 @@ grpFourteenEnd
 * Outputs        : None (branches to next SR in line)
 *-----------------------------------------------------------
 grpFifteen
-        BRA         unknownOp
+        BRA         opSIMHALT
 
 *
 *opcode section, the following currently only print the opcodes and start
@@ -977,6 +977,13 @@ opBCHGStat
         LEA     strBCHG,A6
         BSR     toOutputBuffer
 
+        *buffer size
+        LEA     strByte,A6
+        BSR     toOutputBuffer
+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
+
         *buffer #
         MOVE.B  #35,(A2)+
         *move $ to output buffer
@@ -1023,6 +1030,13 @@ opBCHGDyn
         *buffer opcode
         LEA     strBCHG,A6
         BSR     toOutputBuffer
+
+        *buffer size
+        LEA     strLong,A6
+        BSR     toOutputBuffer
+
+        *buffer TAB
+        MOVE.B  #9,(A2)+
 
         *buffer source data
         *buffer D
@@ -3127,6 +3141,33 @@ opROdEnd
         BRA     nextOp
 
         
+*Group Fifteen
+*-----------------------------------------------------------
+* Subroutine     : opSIMHALT
+* Written by     : Jeff Graham
+* Last Modified  : 3/13/14
+* Description    : Decodes the SIMHALT instruction
+* Purpose        : The final step in decoding opcode
+*-----------------------------------------------------------
+opSIMHALT
+        *Check value
+        CMPI.W  #$FFFF,D2
+        BNE     unknownOp
+        
+        *check operand
+        CMPI.W  #$FFFF,(A3)
+        BNE     unknownOp
+        
+        *buffer opcode
+        LEA     strSIMHALT,A6
+        BSR     toOutputBuffer
+        
+        *Advance A3
+        ADDA.L  #2,A3
+        
+        BSR     printBuffer
+        BRA     nextOp
+        
 
 *utility subroutines
 *-----------------------------------------------------------
@@ -3687,7 +3728,7 @@ opBuffer        DS.B    70  *longest possible opcode is ~66 characters
 strADDI         DC.B    'ADDI',0
 strANDI         DC.B    'ANDI',0
 strEORI         DC.B    'EORI',0
-strBCHG         DC.B    'BCHG   ',TAB,0
+strBCHG         DC.B    'BCHG',0
 strCMPI         DC.B    'CMPI',0
 strMOVEB        DC.B    'MOVE.B ',TAB,0
 strMOVEL        DC.B    'MOVE.L ',TAB,0
@@ -3717,6 +3758,7 @@ strADDA         DC.B    'ADDA',0
 strASd          DC.B    'AS',0
 strLSd          DC.B    'LS',0
 strROd          DC.B    'RO',0
+strSIMHALT      DC.B    'SIMHALT',0
 strByte         DC.B    '.B ',0
 strWord         DC.B    '.W ',0
 strLong         DC.B    '.L ',0
@@ -3724,6 +3766,7 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
