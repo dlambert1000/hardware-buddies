@@ -6,7 +6,6 @@
 *-----------------------------------------------------------
 CR      EQU     $0D
 LF      EQU     $0A
-TAB     EQU     $09
 DECOM_S EQU     $1000       ;Defining the starting address of the Decompiler
 
 START   ORG     $1000
@@ -639,8 +638,13 @@ opADDIB
         LEA     strByte,A6
         BSR     toOutputBuffer
         
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -666,8 +670,12 @@ opADDIW
         LEA     strWord,A6
         BSR     toOutputBuffer
         
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -692,8 +700,12 @@ opADDIL
         LEA     strLong,A6
         BSR     toOutputBuffer
         
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -758,8 +770,12 @@ opANDIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -784,8 +800,12 @@ opANDIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -809,8 +829,12 @@ opANDIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -875,8 +899,12 @@ opEORIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -901,8 +929,12 @@ opEORIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -926,8 +958,12 @@ opEORIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -981,8 +1017,12 @@ opBCHGStat
         LEA     strByte,A6
         BSR     toOutputBuffer
 
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *buffer #
         MOVE.B  #35,(A2)+
@@ -1035,8 +1075,12 @@ opBCHGDyn
         LEA     strLong,A6
         BSR     toOutputBuffer
 
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *buffer source data
         *buffer D
@@ -1093,8 +1137,12 @@ opCMPIB
         *buffer .B
         LEA     strByte,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1119,8 +1167,12 @@ opCMPIW
         *buffer .W
         LEA     strWord,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1144,8 +1196,12 @@ opCMPIL
         *buffer .L
         LEA     strLong,A6
         BSR     toOutputBuffer
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *move # to output Buffer
         MOVE.B      #35,(A2)+       *35 is ascii for #
@@ -1631,8 +1687,12 @@ opCLRL
 opCLREnd
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *decode EA
         MOVE.B  #0,D5       *store register
@@ -1812,8 +1872,12 @@ opSUBQL
         BRA     opSUBQEnd
 
 opSUBQEnd
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *get immediate data
         MOVE.B  #9,D6       *data bit offset
@@ -2037,8 +2101,12 @@ opDIVUW
         CMPI.B  #3,D7
         BNE     unknownOp
         
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         
         *get source EA
         *set ea mode and register
@@ -2110,8 +2178,12 @@ opSUBLong
         BRA     opSUBDir
 
 opSUBDir
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         *buffer SPACE
         MOVE.B  #32,(A2)+
         
@@ -2212,8 +2284,12 @@ opSUBALong
         BRA     opSUBAEa
       
 opSUBAEa
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *ea source
         *Get source EA
@@ -2286,8 +2362,12 @@ opEORL
 opEOREnd
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *buffer D
         MOVE.B  #68,(A2)+
@@ -2356,8 +2436,12 @@ opCMPL
 opCMPEnd
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *get EA
         *no invalid EA's
@@ -2421,8 +2505,12 @@ opCMPAL
         BRA     opCMPAEnd
 
 opCMPAEnd
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         *get EA
         *no invalid EA's
@@ -2538,8 +2626,12 @@ opANDLong
 opANDDir
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *check direction
@@ -2644,8 +2736,12 @@ opADDLong
 opADDDir
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *check direction
@@ -2744,8 +2840,12 @@ opADDALong
 
         
 opADDAEnd
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
         
         *ea source
         *Get source EA
@@ -2821,8 +2921,12 @@ opASdMem
         
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *ea source/dest
@@ -2858,8 +2962,12 @@ opASdL
 opASdIR
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *get data/register number
@@ -2955,8 +3063,12 @@ opLSdMem
         
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *ea source/dest
@@ -2992,8 +3104,12 @@ opLSdL
 opLSdIR
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *get data/register number
@@ -3091,8 +3207,12 @@ opROdMem
         
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
 
         *ea source/dest
@@ -3128,8 +3248,12 @@ opROdL
 opROdIR
         *buffer SPACE
         MOVE.B  #32,(A2)+
-        *buffer TAB
-        MOVE.B  #9,(A2)+
+        *buffer 5x spaces
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
+        MOVE.B  #32,(A2)+
 
         
         *get data/register number
@@ -3727,7 +3851,7 @@ VALID   DC.B    CR,LF,'Memory range is valid. Beginning decompiler',CR,LF,0
 INV_I   DC.B    CR,LF,'ERROR: Input must be valid.',CR,LF,0
 INV_C   DC.B    CR,LF,'ERROR: Invalid character. Values 0~9 or A~F only.',CR,LF
         DC.B    'Make sure you are using capital letters. This program does not allow deleting.',CR,LF,0
-CONT    DC.B    CR,LF,'Press ENTER to Continue',0   
+CONT    DC.B    CR,LF,'Press ENTER to Continue',CR,LF,0   
 ENDING  DC.B    'End Memory Address reached. Now returning to the main screen.',CR,LF,0
 COLON   DC.B    ': ',0
 
@@ -3744,28 +3868,28 @@ strANDI         DC.B    'ANDI',0
 strEORI         DC.B    'EORI',0
 strBCHG         DC.B    'BCHG',0
 strCMPI         DC.B    'CMPI',0
-strMOVEB        DC.B    'MOVE.B ',TAB,0
-strMOVEL        DC.B    'MOVE.L ',TAB,0
-strMOVEW        DC.B    'MOVE.W ',TAB,0
+strMOVEB        DC.B    'MOVE.B      ',0
+strMOVEL        DC.B    'MOVE.L      ',0
+strMOVEW        DC.B    'MOVE.W      ',0
 strMOVEM        DC.B    'MOVEM',0
-strLEA          DC.B    'LEA    ',TAB,0
+strLEA          DC.B    'LEA         ',0
 strCLR          DC.B    'CLR',0
-strJSR          DC.B    'JSR    ',TAB,0
+strJSR          DC.B    'JSR         ',0
 strRTS          DC.B    'RTS',0
-strMULSL        DC.B    'MULS.L ',TAB,0
+strMULSL        DC.B    'MULS.L      ',0
 strSUBQ         DC.B    'SUBQ',0
-strBCC          DC.B    'BCC    ',TAB,0
-strBGT          DC.B    'BGT    ',TAB,0
-strBLE          DC.B    'BLE    ',TAB,0
-strBVS          DC.B    'BVS    ',TAB,0
-strMOVEQ        DC.B    'MOVEQ.L',TAB,0
+strBCC          DC.B    'BCC         ',0
+strBGT          DC.B    'BGT         ',0
+strBLE          DC.B    'BLE         ',0
+strBVS          DC.B    'BVS         ',0
+strMOVEQ        DC.B    'MOVEQ       ',0
 strDIVU         DC.B    'DIVU',0
 strSUB          DC.B    'SUB',0
 strSUBA         DC.B    'SUBA',0
 strEOR          DC.B    'EOR',0
 strCMP          DC.B    'CMP',0
 strCMPA         DC.B    'CMPA',0
-strMULSW        DC.B    'MULS.W ',TAB,0
+strMULSW        DC.B    'MULS.W      ',0
 strAND          DC.B    'AND',0
 strADD          DC.B    'ADD',0
 strADDA         DC.B    'ADDA',0
@@ -3779,6 +3903,7 @@ strLong         DC.B    '.L ',0
 DECOM_E DC.B    1
 
         END     START
+
 
 
 
